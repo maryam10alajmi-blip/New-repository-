@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>المدقق اللغوي</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', 'Arabic Typesetting', Tahoma, sans-serif;
+      background: #f5f0eb;
+      color: #2c2c2c;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #1a1a2e;
+      color: white;
+      padding: 18px 40px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+    }
+
+    header h1 { font-size: 20px; font-weight: 700; }
+    header p { font-size: 12px; color: #aaa; margin-top: 2px; }
+
+    /* API Key bar */
+    #api-bar {
+      background: #fff8e1;
+      border-bottom: 1px solid #ffe082;
+      padding: 10px 40px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    #api-bar label { font-size: 13px; font-weight: 700; color: #555; white-space: nowrap; }
+
+    #api-bar input {
+      flex: 1;
+      min-width: 200px;
+      padding: 7px 12px;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      font-size: 13px;
+      direction: ltr;
+    }
+
+    #api-bar button {
+      padding: 7px 16px;
+      background: #f59e0b;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    #api-bar a {
+      font-size: 12px;
+      color: #2563eb;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    #api-bar a:hover { text-decoration: underline; }
+
+    #api-status { font-size: 12px; }
+    #api-status.ok { color: #16a34a; font-weight: 700; }
+    #api-status.err { color: #dc2626; }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 26px 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+    }
+
+    @media (max-width: 768px) {
+      .container { grid-template-columns: 1fr; }
+      header { padding: 14px 20px; }
+      #api-bar { padding: 10px 20px; }
+    }
+
+    .panel {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      background: #f8f8f8;
+      border-bottom: 1px solid #eee;
+      padding: 12px 18px;
+      font-weight: 700;
+      font-size: 14px;
+      color: #333;
+    }
+
+    .panel-body { padding: 18px; }
+
+    textarea {
+      width: 100%;
+      height: 220px;
+      border: 2px solid #e0ddd8;
+      border-radius: 10px;
+      padding: 13px;
+      font-size: 15px;
+      font-family: inherit;
+      resize: vertical;
+      direction: rtl;
+      line-height: 1.9;
+      color: #333;
+      background: #fafaf9;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+
+    textarea:focus { border-color: #6c63ff; background: #fff; }
+
+    .char-count { text-align: left; font-size: 12px; color: #999; margin-top: 5px; }
+
+    .btn-check {
+      width: 100%;
+      margin-top: 12px;
+      padding: 13px;
+      background: linear-gradient(135deg, #6c63ff, #4f46e5);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-family: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .btn-check:hover { opacity: 0.9; }
+    .btn-check:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    #preview-box {
+      min-height: 180px;
+      font-size: 15px;
+      line-height: 2;
+      direction: rtl;
+      border: 2px solid #e0ddd8;
+      border-radius: 10px;
+      padding: 13px;
+      background: #fafaf9;
+      word-break: break-word;
+    }
+
+    .err-word {
+      background: #fff0f0;
+      border-bottom: 2.5px solid #e53e3e;
+      cursor: pointer;
+      border-radius: 3px;
+      padding: 0 2px;
+      transition: background 0.15s;
+    }
+
+    .err-word:hover { background: #ffe0e0; }
+    .err-word.selected { background: #e8f4ff; border-bottom-color: #3182ce; }
+    .err-word.fixed { background: #f0fff4; border-bottom: 2px solid #38a169; cursor: default; }
+
+    .summary-box {
+      background: linear-gradient(135deg, #f0f4ff, #e8f0ff);
+      border-right: 4px solid #6c63ff;
+      border-radius: 8px;
+      padding: 11px 15px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      color: #444;
+      line-height: 1.7;
+    }
+
+    .error-count { font-size: 13px; color: #888; margin-bottom: 12px; }
+
+    .error-card {
+      border: 1px solid #eee;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: box-shadow 0.2s;
+    }
+
+    .error-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
+    .error-card.active { border-color: #6c63ff; box-shadow: 0 0 0 2px #6c63ff30; }
+
+    .error-card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 13px;
+      background: #fafafa;
+      border-bottom: 1px solid #eee;
+    }
+
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 20px;
+    }
+
+    .badge-نحوي    { background: #fef3c7; color: #92400e; }
+    .badge-إملائي  { background: #fee2e2; color: #991b1b; }
+    .badge-أسلوبي  { background: #ede9fe; color: #5b21b6; }
+    .badge-لغوي    { background: #d1fae5; color: #065f46; }
+    .badge-default { background: #e5e7eb; color: #374151; }
+
+    .err-original { font-weight: 700; font-size: 14px; color: #e53e3e; }
+
+    .error-card-body { padding: 10px 13px; }
+    .explanation { font-size: 12px; color: #666; margin-bottom: 9px; line-height: 1.6; }
+    .alternatives-label { font-size: 11px; font-weight: 700; color: #999; margin-bottom: 7px; }
+
+    .alternatives-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .alt-item { display: flex; flex-direction: column; gap: 4px; }
+
+    .alt-btn {
+      align-self: flex-start;
+      padding: 6px 16px;
+      border-radius: 20px;
+      border: 1.5px solid #6c63ff;
+      background: white;
+      color: #6c63ff;
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      font-weight: 700;
+      transition: all 0.15s;
+    }
+
+    .alt-btn:hover { background: #6c63ff; color: white; }
+    .alt-btn.chosen { background: #38a169; border-color: #38a169; color: white; }
+
+    .alt-meta { display: flex; flex-direction: column; gap: 2px; padding-right: 4px; }
+
+    .alt-note {
+      font-size: 11px;
+      color: #7c3aed;
+      font-weight: 600;
+    }
+
+    .alt-ref {
+      font-size: 11px;
+      color: #6b7280;
+      line-height: 1.5;
+    }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 40px;
+      color: #888;
+      font-size: 14px;
+    }
+
+    .spinner {
+      width: 20px; height: 20px;
+      border: 3px solid #e0e0e0;
+      border-top-color: #6c63ff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty-state { text-align: center; padding: 50px 20px; color: #ccc; font-size: 14px; }
+    .empty-state .icon { font-size: 38px; margin-bottom: 10px; }
+    .no-errors { text-align: center; padding: 28px; color: #38a169; font-size: 14px; font-weight: 700; }
+    .no-errors .icon { font-size: 34px; margin-bottom: 8px; }
+
+    .analysis-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .analysis-item {
+      background: #f8f8ff;
+      border: 1px solid #e8e4ff;
+      border-radius: 10px;
+      padding: 10px 13px;
+    }
+
+    .analysis-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #888;
+      margin-bottom: 4px;
+    }
+
+    .analysis-value {
+      font-size: 14px;
+      color: #2c2c2c;
+      font-weight: 600;
+    }
+
+    .analysis-section { margin-bottom: 12px; }
+
+    .analysis-list {
+      margin-top: 6px;
+      padding-right: 18px;
+      font-size: 13px;
+      line-height: 1.8;
+    }
+
+    .analysis-list.green li { color: #065f46; }
+    .analysis-list.purple li { color: #5b21b6; }
+
+    .btn-copy {
+      margin-top: 12px;
+      padding: 9px 18px;
+      background: #f1f5f9;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: inherit;
+      color: #475569;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+
+    .btn-copy:hover { background: #e2e8f0; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div style="font-size:26px">📝</div>
+  <div>
+    <h1>المدقق اللغوي</h1>
+    <p>تدقيق نحوي وإملائي وأسلوبي — مجاني بالكامل</p>
+  </div>
+</header>
+
+<!-- API Key Bar -->
+<div id="api-bar">
+  <label>🔑 مفتاح Groq:</label>
+  <input type="password" id="api-key-input" placeholder="gsk_...">
+  <button onclick="saveKey()">حفظ</button>
+  <span id="api-status"></span>
+  <a href="https://console.groq.com/keys" target="_blank">← احصل على مفتاح مجاني من هنا</a>
+</div>
+
+<div class="container">
+
+  <!-- Input + Preview -->
+  <div>
+    <div class="panel">
+      <div class="panel-header">✏️ أدخل النص</div>
+      <div class="panel-body">
+        <textarea id="input-text" placeholder="اكتب أو الصق النص العربي هنا...&#10;&#10;مثال: ذهبت إلى المدرسة وتعلمت الكثير من المعلومات المفيده..."></textarea>
+        <div class="char-count"><span id="char-num">0</span> / 3000 حرف</div>
+        <button class="btn-check" id="check-btn" onclick="checkText()">🔍 تدقيق النص</button>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:20px;">
+      <div class="panel-header">👁️ النص مع تمييز الأخطاء</div>
+      <div class="panel-body">
+        <div id="preview-box">
+          <span style="color:#ccc;font-size:13px;">سيظهر النص هنا بعد التدقيق مع تمييز الأخطاء...</span>
+        </div>
+        <button class="btn-copy" id="copy-btn" style="display:none" onclick="copyFixed()">📋 نسخ النص المصحح</button>
+      </div>
+    </div>
+
+    <div class="panel" id="analysis-panel" style="margin-top:20px; display:none;">
+      <div class="panel-header">📊 تحليل النص</div>
+      <div class="panel-body" id="analysis-body"></div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div>
+    <div class="panel" style="min-height:300px; max-height:85vh; overflow-y:auto;">
+      <div class="panel-header">🔍 نتائج التدقيق</div>
+      <div class="panel-body" id="results-area">
+        <div class="empty-state">
+          <div class="icon">🔎</div>
+          <div>أدخل النص واضغط «تدقيق النص»</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ─── State ───────────────────────────────────────────
+  let currentErrors = [];
+  let currentText   = '';
+  let fixedWords    = {}; // idx -> replacement
+
+  // ─── API Key ─────────────────────────────────────────
+  const keyInput = document.getElementById('api-key-input');
+  const apiStatus = document.getElementById('api-status');
+
+  (function loadSavedKey() {
+    const saved = localStorage.getItem('groq_key');
+    if (saved) {
+      keyInput.value = saved;
+      apiStatus.textContent = '✓ محفوظ';
+      apiStatus.className = 'ok';
+    }
+  })();
+
+  function saveKey() {
+    const key = keyInput.value.trim();
+    if (!key) { alert('أدخل المفتاح أولاً'); return; }
+    localStorage.setItem('groq_key', key);
+    apiStatus.textContent = '✓ تم الحفظ';
+    apiStatus.className = 'ok';
+  }
+
+  function getKey() {
+    return keyInput.value.trim() || localStorage.getItem('groq_key') || '';
+  }
+
+  // ─── Char count ───────────────────────────────────────
+  document.getElementById('input-text').addEventListener('input', function() {
+    document.getElementById('char-num').textContent = this.value.length;
+  });
+
+  // ─── Main ─────────────────────────────────────────────
+  async function checkText() {
+    const key = getKey();
+    if (!key) {
+      alert('⚠️ أدخل مفتاح Groq أولاً.\nاحصل عليه مجاناً من console.groq.com/keys');
+      return;
+    }
+
+    const text = document.getElementById('input-text').value.trim();
+    if (!text) return;
+    if (text.length > 3000) { alert('النص طويل جداً — الحد 3000 حرف'); return; }
+
+    const btn = document.getElementById('check-btn');
+    btn.disabled = true;
+    btn.textContent = '⏳ جار التدقيق...';
+
+    fixedWords = {};
+    currentText = text;
+    document.getElementById('copy-btn').style.display = 'none';
+
+    setLoading();
+
+    try {
+      const result = await callGroq(key, text);
+      currentErrors = result.errors || [];
+      renderPreview();
+      renderResults(result);
+      renderAnalysis(result.analysis);
+      if (currentErrors.length) document.getElementById('copy-btn').style.display = 'inline-block';
+    } catch (e) {
+      showError(e.message || 'حدث خطأ، تحقق من المفتاح وحاول مجدداً.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🔍 تدقيق النص';
+    }
+  }
+
+  // ─── Groq API ─────────────────────────────────────────
+  async function callGroq(apiKey, text) {
+    const prompt = `أنت مدقق لغوي متخصص في اللغة العربية الفصحى، تعتمد في تصحيحاتك على المراجع الآتية:
+
+**المعاجم والقواميس:**
+- لسان العرب (ابن منظور) — أضخم معجم في اللغة العربية
+- المعجم الوسيط (مجمع اللغة العربية) — للمفردات الحديثة
+- معجم المعاني — للبحث السريع في المعاني
+
+**النحو والصرف:**
+- النحو الوافي (عباس حسن) — أوسع مرجع حديث في القواعد
+- النحو الواضح (علي الجارم ومصطفى أمين) — للقواعد الموضحة
+- جامع الدروس العربية (مصطفى الغلاييني) — مرجع شامل وأساسي
+
+**المراجع الرقمية الرسمية:**
+- مكتبة مجمع الملك سلمان العالمي للغة العربية
+- موسوعة الدرر السنية — للنحو والصرف وفقه اللغة
+
+**المرجع الأعلى:** القرآن الكريم — الأصل الأول لفصاحة اللغة العربية وسلامتها.
+
+مهمتك: دقق النص التالي. لكل خطأ أو كلمة في غير محلها:
+1. اذكر الكلمة الخاطئة أو المستخدمة في غير سياقها
+2. نوع الخطأ (نحوي/إملائي/أسلوبي/لغوي/سياقي)
+3. شرح موجز للخطأ وسببه
+4. قدّم 2-4 بدائل، ولكل بديل اذكر:
+   - الكلمة البديلة
+   - سبب اختيارها (مثل: وردت في القرآن الكريم في سورة كذا، أو جاء في لسان العرب كذا، أو المعجم الوسيط يُعرّفها بكذا)
+   - هل هي الأدق في هذا السياق أم مرادف مقبول
+
+أعد النتيجة بصيغة JSON فقط بدون أي نص إضافي:
+{
+  "errors": [
+    {
+      "original": "الكلمة الخاطئة",
+      "type": "نوع الخطأ",
+      "explanation": "شرح الخطأ وسببه",
+      "alternatives": [
+        {
+          "word": "الكلمة البديلة",
+          "reference": "المرجع: مثلاً — وردت في القرآن الكريم (البقرة:٢٥٥)، أو لسان العرب: ...",
+          "note": "الأدق سياقاً / مرادف مقبول / الأفصح"
+        }
+      ]
+    }
+  ],
+  "summary": "ملخص عن مستوى النص وجودته اللغوية",
+  "analysis": {
+    "topic": "موضوع النص في جملة واحدة",
+    "style": "نوع الأسلوب (سردي / وصفي / حجاجي / شعري / علمي / ...)",
+    "level": "مستوى اللغة (عالٍ / متوسط / بسيط)",
+    "strengths": ["نقطة قوة أولى", "نقطة قوة ثانية"],
+    "suggestions": ["اقتراح لتحسين النص", "اقتراح آخر"],
+    "word_count": عدد_الكلمات
+  }
+}
+
+النص:
+${text}`;
+
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.1,
+        max_tokens: 4096
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      const msg = err?.error?.message || `خطأ ${res.status}`;
+      throw new Error(msg);
+    }
+
+    const data = await res.json();
+    let raw = data.choices?.[0]?.message?.content || '';
+    raw = raw.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/, '').trim();
+
+    return safeParseJSON(raw);
+  }
+
+  function safeParseJSON(raw) {
+    // Try direct parse first
+    try { return JSON.parse(raw); } catch(e) {}
+
+    // Find outermost { ... }
+    const start = raw.indexOf('{');
+    let end = raw.lastIndexOf('}');
+    if (start === -1) throw new Error('لم يتمكن النموذج من إنتاج نتيجة، حاول مجدداً');
+
+    let json = raw.slice(start, end + 1);
+
+    // Try after basic extraction
+    try { return JSON.parse(json); } catch(e) {}
+
+    // Fix truncated JSON by closing open structures
+    let opens = 0, inStr = false, esc2 = false;
+    for (let i = 0; i < json.length; i++) {
+      const c = json[i];
+      if (esc2) { esc2 = false; continue; }
+      if (c === '\\') { esc2 = true; continue; }
+      if (c === '"') { inStr = !inStr; continue; }
+      if (!inStr) {
+        if (c === '{' || c === '[') opens++;
+        if (c === '}' || c === ']') opens--;
+      }
+    }
+
+    // Close any unclosed string and structures
+    if (inStr) json += '"';
+    // Remove trailing incomplete key/value
+    json = json.replace(/,\s*$/, '').replace(/:\s*$/, ': null');
+
+    // Add closing brackets
+    const stack = [];
+    inStr = false; esc2 = false;
+    for (let i = 0; i < json.length; i++) {
+      const c = json[i];
+      if (esc2) { esc2 = false; continue; }
+      if (c === '\\') { esc2 = true; continue; }
+      if (c === '"') { inStr = !inStr; continue; }
+      if (!inStr) {
+        if (c === '{') stack.push('}');
+        else if (c === '[') stack.push(']');
+        else if (c === '}' || c === ']') stack.pop();
+      }
+    }
+    json += stack.reverse().join('');
+
+    try { return JSON.parse(json); } catch(e) {
+      throw new Error('تعذّر قراءة الرد، حاول بنص أقصر');
+    }
+  }
+
+  // ─── Render ───────────────────────────────────────────
+  function renderPreview() {
+    const box = document.getElementById('preview-box');
+    if (!currentErrors.length) {
+      box.textContent = currentText;
+      return;
+    }
+    box.innerHTML = buildPreviewHTML(currentText, currentErrors);
+  }
+
+  function buildPreviewHTML(text, errors) {
+    let html = esc(text);
+    // Deduplicate originals to avoid double-highlighting
+    const seen = new Set();
+    errors.forEach((err, idx) => {
+      if (seen.has(err.original)) return;
+      seen.add(err.original);
+      const word = esc(err.original);
+      const re = new RegExp(word, 'g');
+      html = html.replace(re, `<span class="err-word" data-idx="${idx}" onclick="selectError(${idx})">${word}</span>`);
+    });
+    return html;
+  }
+
+  function renderResults(data) {
+    const area = document.getElementById('results-area');
+
+    if (!currentErrors.length) {
+      area.innerHTML = `
+        <div class="summary-box">${esc(data.summary)}</div>
+        <div class="no-errors"><div class="icon">✅</div>النص سليم — لا توجد أخطاء</div>`;
+      return;
+    }
+
+    let html = `<div class="summary-box">${esc(data.summary)}</div>`;
+    html += `<div class="error-count">وُجد <strong>${currentErrors.length}</strong> ${currentErrors.length === 1 ? 'خطأ' : 'أخطاء'}</div>`;
+
+    currentErrors.forEach((err, idx) => {
+      const types = ['نحوي','إملائي','أسلوبي','لغوي'];
+      const badgeCls = types.includes(err.type) ? `badge-${err.type}` : 'badge-default';
+
+      const alts = (err.alternatives || []).map((alt, ai) => {
+        const word    = typeof alt === 'string' ? alt : alt.word;
+        const ref     = typeof alt === 'object' ? (alt.reference || '') : '';
+        const note    = typeof alt === 'object' ? (alt.note || '')      : '';
+        const safeW   = word.replace(/'/g, "\\'");
+        return `
+          <div class="alt-item">
+            <button class="alt-btn" data-idx="${idx}" data-ai="${ai}"
+              onclick="chooseAlt(${idx}, ${ai}, this, '${safeW}')">${esc(word)}</button>
+            <div class="alt-meta">
+              ${note    ? `<span class="alt-note">${esc(note)}</span>` : ''}
+              ${ref     ? `<span class="alt-ref">📖 ${esc(ref)}</span>` : ''}
+            </div>
+          </div>`;
+      }).join('');
+
+      html += `
+        <div class="error-card" id="card-${idx}" onclick="selectCard(${idx})">
+          <div class="error-card-header">
+            <span class="badge ${badgeCls}">${esc(err.type)}</span>
+            <span class="err-original">${esc(err.original)}</span>
+          </div>
+          <div class="error-card-body">
+            <div class="explanation">${esc(err.explanation)}</div>
+            <div class="alternatives-label">البدائل المقترحة:</div>
+            <div class="alternatives-list">${alts}</div>
+          </div>
+        </div>`;
+    });
+
+    area.innerHTML = html;
+  }
+
+  // ─── Interactions ─────────────────────────────────────
+  function selectError(idx) {
+    allCards(c => c.classList.remove('active'));
+    const card = document.getElementById(`card-${idx}`);
+    if (card) { card.classList.add('active'); card.scrollIntoView({ behavior:'smooth', block:'nearest' }); }
+    allErrWords(w => w.classList.remove('selected'));
+    document.querySelectorAll(`.err-word[data-idx="${idx}"]`).forEach(w => w.classList.add('selected'));
+  }
+
+  function selectCard(idx) {
+    allCards(c => c.classList.remove('active'));
+    document.getElementById(`card-${idx}`)?.classList.add('active');
+    allErrWords(w => w.classList.remove('selected'));
+    const first = document.querySelector(`.err-word[data-idx="${idx}"]`);
+    if (first) { first.classList.add('selected'); first.scrollIntoView({ behavior:'smooth', block:'nearest' }); }
+  }
+
+  function chooseAlt(idx, ai, btn, alt) {
+    const err = currentErrors[idx];
+
+    document.querySelectorAll(`.err-word[data-idx="${idx}"]`).forEach(span => {
+      span.textContent = alt;
+      span.className = 'err-word fixed';
+      span.onclick = null;
+    });
+
+    currentText = currentText.split(err.original).join(alt);
+    fixedWords[idx] = alt;
+
+    document.querySelectorAll(`.alt-btn[data-idx="${idx}"]`).forEach(b => b.classList.remove('chosen'));
+    btn.classList.add('chosen');
+  }
+
+  function renderAnalysis(a) {
+    const panel = document.getElementById('analysis-panel');
+    const body  = document.getElementById('analysis-body');
+    if (!a) { panel.style.display = 'none'; return; }
+
+    const strengths   = (a.strengths   || []).map(s => `<li>${esc(s)}</li>`).join('');
+    const suggestions = (a.suggestions || []).map(s => `<li>${esc(s)}</li>`).join('');
+
+    body.innerHTML = `
+      <div class="analysis-grid">
+        <div class="analysis-item">
+          <div class="analysis-label">📌 الموضوع</div>
+          <div class="analysis-value">${esc(a.topic || '—')}</div>
+        </div>
+        <div class="analysis-item">
+          <div class="analysis-label">🖊️ الأسلوب</div>
+          <div class="analysis-value">${esc(a.style || '—')}</div>
+        </div>
+        <div class="analysis-item">
+          <div class="analysis-label">📶 مستوى اللغة</div>
+          <div class="analysis-value">${esc(a.level || '—')}</div>
+        </div>
+        <div class="analysis-item">
+          <div class="analysis-label">🔢 عدد الكلمات</div>
+          <div class="analysis-value">${a.word_count || '—'}</div>
+        </div>
+      </div>
+      ${strengths ? `
+      <div class="analysis-section">
+        <div class="analysis-label">✨ نقاط القوة</div>
+        <ul class="analysis-list green">${strengths}</ul>
+      </div>` : ''}
+      ${suggestions ? `
+      <div class="analysis-section">
+        <div class="analysis-label">💡 مقترحات التحسين</div>
+        <ul class="analysis-list purple">${suggestions}</ul>
+      </div>` : ''}
+    `;
+    panel.style.display = 'block';
+  }
+
+  function copyFixed() {
+    const box = document.getElementById('preview-box');
+    navigator.clipboard.writeText(box.innerText || box.textContent)
+      .then(() => {
+        const b = document.getElementById('copy-btn');
+        b.textContent = '✓ تم النسخ!';
+        setTimeout(() => b.textContent = '📋 نسخ النص المصحح', 2000);
+      });
+  }
+
+  // ─── Helpers ──────────────────────────────────────────
+  function setLoading() {
+    const spin = `<div class="loading"><div class="spinner"></div> جار التحليل اللغوي...</div>`;
+    document.getElementById('results-area').innerHTML = spin;
+    document.getElementById('preview-box').innerHTML = spin;
+  }
+
+  function showError(msg) {
+    document.getElementById('results-area').innerHTML =
+      `<div style="color:#e53e3e;padding:20px;text-align:center;font-size:14px;">⚠️ ${esc(msg)}</div>`;
+    document.getElementById('preview-box').innerHTML =
+      `<span style="color:#ccc;font-size:13px;">تعذّر التدقيق</span>`;
+  }
+
+  function esc(t = '') {
+    return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function allCards(fn) { document.querySelectorAll('.error-card').forEach(fn); }
+  function allErrWords(fn) { document.querySelectorAll('.err-word').forEach(fn); }
+</script>
+</body>
+</html>
